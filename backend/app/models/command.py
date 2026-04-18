@@ -2,7 +2,7 @@ import uuid
 import enum
 from datetime import datetime
 from sqlalchemy import Column, String, DateTime, Enum as SAEnum, Text, ForeignKey
-from sqlalchemy.dialects.postgresql import UUID, JSONB
+from sqlalchemy import Uuid as UUID, JSON as JSONB
 from sqlalchemy.orm import relationship
 from app.database import Base
 
@@ -10,6 +10,7 @@ from app.database import Base
 class CommandType(str, enum.Enum):
     LOCK_DEVICE = "lock_device"
     UNLOCK_DEVICE = "unlock_device"
+    TRIGGER_ALARM = "trigger_alarm"
     REMOTE_UNINSTALL = "remote_uninstall"
     WIPE_DEVICE = "wipe_device"
     LOCATION_REQUEST = "location_request"

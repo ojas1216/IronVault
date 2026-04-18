@@ -36,7 +36,8 @@ async def enroll_device(
     db: AsyncSession = Depends(get_db),
 ):
     """Called by agent on first install. Validates company enrollment code."""
-    if body.enrollment_code != settings.get("ENROLLMENT_CODE", COMPANY_ENROLLMENT_CODE):
+    expected_code = getattr(settings, "ENROLLMENT_CODE", COMPANY_ENROLLMENT_CODE)
+    if body.enrollment_code != expected_code:
         from fastapi import HTTPException
         raise HTTPException(status_code=403, detail="Invalid enrollment code")
 

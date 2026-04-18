@@ -4,13 +4,12 @@ from app.config import get_settings
 
 settings = get_settings()
 
-engine = create_async_engine(
-    settings.ASYNC_DATABASE_URL,
-    pool_pre_ping=True,
-    pool_size=20,
-    max_overflow=40,
-    echo=settings.DEBUG,
-)
+_is_sqlite = settings.ASYNC_DATABASE_URL.startswith("sqlite")
+_engine_kwargs = {"pool_pre_ping": True, "echo": settings.DEBUG}
+if not _is_sqlite:
+    _engine_kwargs.update({"pool_size": 20, "max_overflow": 40})
+
+engine = create_async_engine(settings.ASYNC_DATABASE_URL, **_engine_kwargs)
 
 AsyncSessionLocal = async_sessionmaker(
     bind=engine,

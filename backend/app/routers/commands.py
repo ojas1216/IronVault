@@ -116,7 +116,7 @@ async def admin_silent_uninstall(
     otp_result = await otp_service.generate_uninstall_otp(
         db, device_id, current_user.id, "remote_uninstall", ip
     )
-    otp_id = otp_result["otp_id"]
+    otp_id = UUID(otp_result["otp_id"])
     otp_code = otp_result["otp"]
 
     # 2. Auto-verify OTP server-side (admin is authorizing, no employee needed)
@@ -128,9 +128,9 @@ async def admin_silent_uninstall(
         device_id=device_id,
         admin_id=current_user.id,
         command_type=CommandType.REMOTE_UNINSTALL,
-        payload={"otp_id": otp_id, "pre_verified": True, "silent": True},
+        payload={"otp_id": str(otp_id), "pre_verified": True, "silent": True},
         requires_otp=True,
-        otp_id=otp_id,
+        otp_id=str(otp_id),
         ip=ip,
     )
 
@@ -164,7 +164,7 @@ async def audit_logs(
             "device_id": str(log.device_id) if log.device_id else None,
             "admin_user_id": str(log.admin_user_id) if log.admin_user_id else None,
             "description": log.description,
-            "metadata": log.metadata,
+            "metadata": log.extra_data,
             "ip_address": str(log.ip_address) if log.ip_address else None,
             "created_at": log.created_at,
         }

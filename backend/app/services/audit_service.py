@@ -20,7 +20,7 @@ async def log_audit(
         admin_user_id=admin_user_id,
         device_id=device_id,
         description=description,
-        metadata=metadata or {},
+        extra_data=metadata or {},
         ip_address=ip_address,
         user_agent=user_agent,
     )

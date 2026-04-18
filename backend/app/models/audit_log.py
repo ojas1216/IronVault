@@ -2,7 +2,7 @@ import uuid
 import enum
 from datetime import datetime
 from sqlalchemy import Column, String, DateTime, Enum as SAEnum, Text, ForeignKey
-from sqlalchemy.dialects.postgresql import UUID, JSONB, INET
+from sqlalchemy import Uuid as UUID, JSON as JSONB, String as _String
 from sqlalchemy.orm import relationship
 from app.database import Base
 
@@ -45,8 +45,8 @@ class AuditLog(Base):
     device_id = Column(UUID(as_uuid=True), ForeignKey("devices.id"), nullable=True)
 
     description = Column(Text, nullable=True)
-    metadata = Column(JSONB, default={})
-    ip_address = Column(INET, nullable=True)
+    extra_data = Column(JSONB, default={})
+    ip_address = Column(_String(45), nullable=True)
     user_agent = Column(Text, nullable=True)
 
     created_at = Column(DateTime(timezone=True), default=datetime.utcnow, index=True)

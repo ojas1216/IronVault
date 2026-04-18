@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IronVault Admin Panel</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', sans-serif; background: #0d0d1a; color: #e0e0e0; display: flex; height: 100vh; overflow: hidden; }
+
+  /* Sidebar */
+  #sidebar { width: 240px; background: #12122a; border-right: 1px solid #1e1e4a; display: flex; flex-direction: column; }
+  .brand { padding: 20px; font-size: 20px; font-weight: 700; color: #4fc3f7; border-bottom: 1px solid #1e1e4a; }
+  .nav-item { padding: 12px 20px; cursor: pointer; transition: background 0.2s; color: #aaa; font-size: 14px; }
+  .nav-item:hover, .nav-item.active { background: #1a1a3a; color: #4fc3f7; }
+  .nav-section { padding: 8px 20px; font-size: 10px; color: #555; text-transform: uppercase; letter-spacing: 1px; margin-top: 8px; }
+
+  /* Main content */
+  #main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+  #header { padding: 16px 24px; background: #12122a; border-bottom: 1px solid #1e1e4a; display: flex; align-items: center; justify-content: space-between; }
+  #header h1 { font-size: 18px; color: #fff; }
+  #content { flex: 1; overflow-y: auto; padding: 24px; }
+
+  /* Cards */
+  .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+  .stat-card { background: #1a1a2e; border-radius: 12px; padding: 20px; border: 1px solid #252545; }
+  .stat-label { font-size: 11px; color: #888; margin-bottom: 8px; text-transform: uppercase; }
+  .stat-value { font-size: 32px; font-weight: 700; color: #4fc3f7; }
+  .stat-sub { font-size: 11px; color: #666; margin-top: 4px; }
+
+  /* Table */
+  .card { background: #1a1a2e; border-radius: 12px; border: 1px solid #252545; overflow: hidden; margin-bottom: 20px; }
+  .card-header { padding: 16px 20px; border-bottom: 1px solid #252545; display: flex; justify-content: space-between; align-items: center; }
+  .card-title { font-size: 14px; font-weight: 600; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { padding: 10px 16px; text-align: left; font-size: 11px; text-transform: uppercase; color: #666; background: #0f0f20; border-bottom: 1px solid #252545; }
+  td { padding: 12px 16px; border-bottom: 1px solid #1e1e3a; }
+  tr:hover td { background: #1e1e3a; }
+  tr:last-child td { border-bottom: none; }
+
+  /* Badges */
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 9999px; font-size: 11px; font-weight: 600; }
+  .badge-green { background: #0d3320; color: #4ade80; }
+  .badge-red { background: #3d1010; color: #f87171; }
+  .badge-yellow { background: #3d3310; color: #fbbf24; }
+  .badge-gray { background: #1e1e2e; color: #888; }
+  .badge-orange { background: #3d2010; color: #fb923c; }
+
+  /* Map */
+  #map { height: 400px; border-radius: 8px; overflow: hidden; }
+
+  /* Buttons */
+  .btn { padding: 6px 14px; border-radius: 6px; border: none; cursor: pointer; font-size: 12px; font-weight: 600; transition: all 0.2s; }
+  .btn-primary { background: #4fc3f7; color: #000; }
+  .btn-red { background: #dc2626; color: #fff; }
+  .btn-orange { background: #ea580c; color: #fff; }
+  .btn-ghost { background: transparent; color: #4fc3f7; border: 1px solid #4fc3f7; }
+  .btn:hover { opacity: 0.85; }
+
+  /* Login overlay */
+  #login-overlay { position: fixed; inset: 0; background: #0d0d1a; display: flex; align-items: center; justify-content: center; z-index: 9999; }
+  .login-box { background: #12122a; border: 1px solid #252545; border-radius: 16px; padding: 40px; width: 360px; }
+  .login-box h2 { font-size: 24px; color: #4fc3f7; margin-bottom: 24px; }
+  input { width: 100%; padding: 10px 14px; background: #0d0d1a; border: 1px solid #333; border-radius: 8px; color: #fff; font-size: 14px; margin-bottom: 12px; outline: none; }
+  input:focus { border-color: #4fc3f7; }
+  .error-msg { color: #f87171; font-size: 12px; margin-bottom: 8px; }
+
+  /* Detail panel */
+  #detail-panel { display: none; position: fixed; right: 0; top: 0; bottom: 0; width: 480px; background: #12122a; border-left: 1px solid #1e1e4a; overflow-y: auto; z-index: 100; padding: 24px; }
+  #detail-panel.open { display: block; }
+  .detail-close { position: absolute; top: 16px; right: 16px; cursor: pointer; color: #888; font-size: 20px; }
+  .detail-section { margin-bottom: 20px; }
+  .detail-section h4 { font-size: 12px; color: #888; text-transform: uppercase; margin-bottom: 8px; }
+  .detail-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #1e1e3a; font-size: 13px; }
+  .detail-row:last-child { border-bottom: none; }
+  .detail-key { color: #888; }
+  .cmd-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+  .loading { display: flex; align-items: center; justify-content: center; height: 200px; color: #555; }
+  .page { display: none; }
+  .page.active { display: block; }
+</style>
+</head>
+<body>
+
+<!-- Login Overlay -->
+<div id="login-overlay">
+  <div class="login-box">
+    <h2>⚡ IronVault</h2>
+    <p style="color:#888;margin-bottom:24px;font-size:13px">Admin Portal</p>
+    <input type="email" id="login-email" placeholder="Email" value="">
+    <input type="password" id="login-password" placeholder="Password">
+    <div class="error-msg" id="login-error"></div>
+    <button class="btn btn-primary" style="width:100%;padding:12px" onclick="login()">Sign In</button>
+  </div>
+</div>
+
+<!-- Sidebar -->
+<div id="sidebar">
+  <div class="brand">⚡ IronVault</div>
+  <div class="nav-section">Monitor</div>
+  <div class="nav-item active" onclick="showPage('dashboard')">📊 Dashboard</div>
+  <div class="nav-item" onclick="showPage('devices')">📱 Devices</div>
+  <div class="nav-item" onclick="showPage('map-view')">🗺️ Live Map</div>
+  <div class="nav-section">Security</div>
+  <div class="nav-item" onclick="showPage('alerts')">🚨 Alerts</div>
+  <div class="nav-item" onclick="showPage('sim-events')">📡 SIM Events</div>
+  <div class="nav-section">Tools</div>
+  <div class="nav-item" onclick="showPage('registry')">🔍 HW Registry</div>
+  <div style="flex:1"></div>
+  <div class="nav-item" onclick="logout()" style="color:#f87171;margin-bottom:8px">⎋ Logout</div>
+</div>
+
+<!-- Main -->
+<div id="main">
+  <div id="header">
+    <h1 id="page-title">Dashboard</h1>
+    <div style="display:flex;gap:8px;align-items:center">
+      <span style="font-size:12px;color:#888" id="last-refresh">—</span>
+      <button class="btn btn-ghost" onclick="refresh()">↻ Refresh</button>
+    </div>
+  </div>
+
+  <div id="content">
+
+    <!-- Dashboard Page -->
+    <div id="page-dashboard" class="page active">
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-label">Total Devices</div>
+          <div class="stat-value" id="stat-total">—</div>
+          <div class="stat-sub">enrolled</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Online Now</div>
+          <div class="stat-value" id="stat-online" style="color:#4ade80">—</div>
+          <div class="stat-sub">seen < 5 min</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Active Alerts</div>
+          <div class="stat-value" id="stat-alerts" style="color:#f87171">—</div>
+          <div class="stat-sub">unresolved</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Stolen</div>
+          <div class="stat-value" id="stat-stolen" style="color:#fb923c">—</div>
+          <div class="stat-sub">marked stolen</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Recent Devices</span>
+          <button class="btn btn-ghost" onclick="showPage('devices')">View All</button>
+        </div>
+        <table>
+          <thead><tr>
+            <th>Device</th><th>Owner</th><th>Status</th><th>Last Seen</th><th>Actions</th>
+          </tr></thead>
+          <tbody id="dashboard-devices"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Devices Page -->
+    <div id="page-devices" class="page">
+      <div style="display:flex;gap:8px;margin-bottom:16px">
+        <input type="text" id="search-input" placeholder="Search by name, IMEI, owner..." style="max-width:320px" oninput="filterDevices()">
+        <select id="status-filter" style="background:#0d0d1a;border:1px solid #333;color:#fff;padding:10px;border-radius:8px;font-size:13px" onchange="filterDevices()">
+          <option value="">All Status</option>
+          <option value="active">Active</option>
+          <option value="stolen">Stolen</option>
+          <option value="wiping">Wiping</option>
+        </select>
+      </div>
+      <div class="card">
+        <table>
+          <thead><tr>
+            <th>Device</th><th>Owner</th><th>IMEI</th><th>Model</th><th>Status</th><th>Last Seen</th><th></th>
+          </tr></thead>
+          <tbody id="devices-table"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Map Page -->
+    <div id="page-map-view" class="page">
+      <div class="card" style="overflow:visible">
+        <div class="card-header"><span class="card-title">Live Device Map</span></div>
+        <div id="map" style="height:500px;border-radius:0 0 12px 12px"></div>
+      </div>
+    </div>
+
+    <!-- Alerts Page -->
+    <div id="page-alerts" class="page">
+      <div class="card">
+        <div class="card-header"><span class="card-title">Security Alerts</span></div>
+        <table>
+          <thead><tr><th>Time</th><th>Device</th><th>Event</th><th>Severity</th><th>Actions</th></tr></thead>
+          <tbody id="alerts-table"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- SIM Events Page -->
+    <div id="page-sim-events" class="page">
+      <div class="card">
+        <div class="card-header"><span class="card-title">SIM Events</span></div>
+        <table>
+          <thead><tr><th>Time</th><th>Device</th><th>Type</th><th>Details</th><th>Status</th></tr></thead>
+          <tbody id="sim-table"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Registry Page -->
+    <div id="page-registry" class="page">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Hardware Registry — Anti-Resale Analysis</span>
+          <button class="btn btn-ghost" onclick="loadRegistry()">Run Scan</button>
+        </div>
+        <div id="registry-content" style="padding:20px;color:#888;font-size:13px">
+          Click "Run Scan" to cross-reference all hardware fingerprints and IMEIs.
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Device Detail Panel -->
+<div id="detail-panel">
+  <span class="detail-close" onclick="closeDetail()">✕</span>
+  <div id="detail-content"></div>
+</div>
+
+<script>
+let token = localStorage.getItem('ironvault_token');
+let allDevices = [];
+let map = null;
+
+// ─── Auth ────────────────────────────────────────────────────────────────────
+
+async function login() {
+  const email = document.getElementById('login-email').value;
+  const pass = document.getElementById('login-password').value;
+  try {
+    const r = await fetch('/api/auth/login', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({email, password: pass})
+    });
+    if (!r.ok) throw new Error();
+    const data = await r.json();
+    token = data.access_token;
+    localStorage.setItem('ironvault_token', token);
+    document.getElementById('login-overlay').style.display = 'none';
+    init();
+  } catch {
+    document.getElementById('login-error').textContent = 'Invalid credentials';
+  }
+}
+
+function logout() {
+  localStorage.removeItem('ironvault_token');
+  location.reload();
+}
+
+async function apiFetch(url, opts = {}) {
+  const r = await fetch(url, {
+    ...opts,
+    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json', ...(opts.headers||{}) }
+  });
+  if (r.status === 401) { logout(); return null; }
+  return r.json();
+}
+
+// ─── Init ────────────────────────────────────────────────────────────────────
+
+async function init() {
+  if (!token) { document.getElementById('login-overlay').style.display = 'flex'; return; }
+  document.getElementById('login-overlay').style.display = 'none';
+  await loadDashboard();
+  setInterval(refresh, 30000);
+}
+
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById(`page-${name}`).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n => {
+    if (n.textContent.toLowerCase().includes(name.replace('-', ' '))) n.classList.add('active');
+  });
+  document.getElementById('page-title').textContent = name.replace(/-/g,' ').replace(/\b\w/g,c=>c.toUpperCase());
+
+  if (name === 'map-view') initMap();
+  else if (name === 'alerts') loadAlerts();
+  else if (name === 'sim-events') loadSimEvents();
+  else if (name === 'devices') renderDevices();
+}
+
+async function refresh() {
+  await loadDashboard();
+  document.getElementById('last-refresh').textContent = 'Updated ' + new Date().toLocaleTimeString();
+}
+
+// ─── Dashboard ───────────────────────────────────────────────────────────────
+
+async function loadDashboard() {
+  const data = await apiFetch('/api/admin/devices');
+  if (!data) return;
+  allDevices = data.devices;
+
+  const online = allDevices.filter(d => {
+    if (!d.last_seen) return false;
+    return (Date.now() - new Date(d.last_seen).getTime()) < 5 * 60 * 1000;
+  });
+  const stolen = allDevices.filter(d => d.status === 'stolen');
+
+  document.getElementById('stat-total').textContent = allDevices.length;
+  document.getElementById('stat-online').textContent = online.length;
+  document.getElementById('stat-stolen').textContent = stolen.length;
+
+  const alertsData = await apiFetch('/api/admin/alerts?unresolved_only=true');
+  document.getElementById('stat-alerts').textContent = alertsData?.alerts?.length || 0;
+
+  const tbody = document.getElementById('dashboard-devices');
+  tbody.innerHTML = allDevices.slice(0, 10).map(renderDeviceRow).join('');
+}
+
+function renderDeviceRow(d) {
+  const lastSeen = d.last_seen ? timeAgo(d.last_seen) : 'Never';
+  const statusBadge = d.status === 'active'
+    ? `<span class="badge badge-green">Active</span>`
+    : d.status === 'stolen'
+    ? `<span class="badge badge-red">Stolen</span>`
+    : `<span class="badge badge-gray">${d.status}</span>`;
+  return `<tr>
+    <td><strong>${esc(d.device_name)}</strong><br><span style="color:#666;font-size:11px">${esc(d.model||'')}</span></td>
+    <td>${esc(d.owner_name||'')}</td>
+    <td>${statusBadge}</td>
+    <td style="color:#888;font-size:12px">${lastSeen}</td>
+    <td>
+      <button class="btn btn-ghost" onclick="openDetail('${d.id}')">View</button>
+      ${d.status !== 'stolen' ? `<button class="btn btn-red" style="margin-left:4px" onclick="markStolen('${d.id}')">Mark Stolen</button>` : ''}
+    </td>
+  </tr>`;
+}
+
+function renderDevices() {
+  filterDevices();
+}
+
+function filterDevices() {
+  const search = document.getElementById('search-input').value.toLowerCase();
+  const status = document.getElementById('status-filter').value;
+  const filtered = allDevices.filter(d => {
+    const matchSearch = !search || [d.device_name, d.owner_name, d.imei, d.model]
+      .some(v => v?.toLowerCase().includes(search));
+    const matchStatus = !status || d.status === status;
+    return matchSearch && matchStatus;
+  });
+  document.getElementById('devices-table').innerHTML = filtered.map(d => {
+    const last = d.last_seen ? timeAgo(d.last_seen) : 'Never';
+    return `<tr>
+      <td><strong>${esc(d.device_name)}</strong></td>
+      <td>${esc(d.owner_name||'')}</td>
+      <td style="font-size:12px;color:#888">${esc(d.imei||'—')}</td>
+      <td style="font-size:12px">${esc((d.manufacturer||'')+' '+(d.model||''))}</td>
+      <td><span class="badge ${d.status==='active'?'badge-green':d.status==='stolen'?'badge-red':'badge-gray'}">${d.status}</span></td>
+      <td style="color:#888;font-size:12px">${last}</td>
+      <td><button class="btn btn-ghost" onclick="openDetail('${d.id}')">View</button></td>
+    </tr>`;
+  }).join('');
+}
+
+// ─── Alerts ───────────────────────────────────────────────────────────────────
+
+async function loadAlerts() {
+  const data = await apiFetch('/api/admin/alerts?unresolved_only=true');
+  const tbody = document.getElementById('alerts-table');
+  if (!data?.alerts) return;
+  tbody.innerHTML = data.alerts.map(a => {
+    const sev = a.event?.includes('CRITICAL') || a.event?.includes('brick') ? 'badge-red'
+      : a.event?.includes('HIGH') || a.event?.includes('stolen') ? 'badge-orange' : 'badge-yellow';
+    return `<tr>
+      <td style="font-size:11px;color:#888">${new Date(a.ts).toLocaleString()}</td>
+      <td>${a.device_id?.slice(0,8)}...</td>
+      <td><span class="badge ${sev}">${esc(a.event||'')}</span></td>
+      <td>—</td>
+      <td><button class="btn btn-ghost" onclick="openDetail('${a.device_id}')">Device</button></td>
+    </tr>`;
+  }).join('');
+}
+
+async function loadSimEvents() {
+  const tbody = document.getElementById('sim-table');
+  tbody.innerHTML = '<tr><td colspan="5" class="loading">Loading...</td></tr>';
+  // Showing recent alerts filtered to sim events
+  const data = await apiFetch('/api/admin/alerts?unresolved_only=false');
+  const simAlerts = (data?.alerts || []).filter(a => a.event?.includes('sim'));
+  tbody.innerHTML = simAlerts.map(a => `<tr>
+    <td style="font-size:11px;color:#888">${new Date(a.ts).toLocaleString()}</td>
+    <td>${a.device_id?.slice(0,8)}...</td>
+    <td><span class="badge badge-red">${esc(a.event||'')}</span></td>
+    <td style="font-size:11px;color:#888">${JSON.stringify(a.payload||{}).slice(0,80)}...</td>
+    <td><span class="badge badge-yellow">Open</span></td>
+  </tr>`).join('');
+}
+
+// ─── Map ──────────────────────────────────────────────────────────────────────
+
+async function initMap() {
+  if (!map) {
+    map = L.map('map').setView([20.5937, 78.9629], 5);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+  }
+  // Clear markers
+  map.eachLayer(l => { if (l instanceof L.Marker) map.removeLayer(l); });
+
+  allDevices.forEach(d => {
+    if (d.last_latitude && d.last_longitude) {
+      const color = d.status === 'stolen' ? '🔴' : d.is_online ? '🟢' : '⚪';
+      L.marker([d.last_latitude, d.last_longitude])
+        .bindPopup(`${color} <strong>${esc(d.device_name)}</strong><br>${esc(d.owner_name||'')}<br>Status: ${d.status}`)
+        .addTo(map);
+    }
+  });
+}
+
+// ─── Device Detail ───────────────────────────────────────────────────────────
+
+async function openDetail(deviceId) {
+  document.getElementById('detail-panel').classList.add('open');
+  document.getElementById('detail-content').innerHTML = '<div class="loading">Loading...</div>';
+
+  const data = await apiFetch(`/api/admin/devices/${deviceId}`);
+  if (!data) return;
+  const d = data.device;
+
+  document.getElementById('detail-content').innerHTML = `
+    <h2 style="margin-bottom:4px">${esc(d.device_name)}</h2>
+    <p style="color:#888;font-size:12px;margin-bottom:20px">${esc(d.owner_name||'')} · ${esc(d.department||'')}</p>
+
+    <div class="detail-section">
+      <h4>Hardware Identity</h4>
+      <div class="detail-row"><span class="detail-key">IMEI</span><span>${esc(d.imei||'—')}</span></div>
+      <div class="detail-row"><span class="detail-key">IMEI2</span><span>${esc(d.imei2||'—')}</span></div>
+      <div class="detail-row"><span class="detail-key">Serial</span><span style="font-size:11px">${esc(d.serial||'—')}</span></div>
+      <div class="detail-row"><span class="detail-key">HW Fingerprint</span><span style="font-size:10px;font-family:monospace">${(d.hardware_fingerprint||'—').slice(0,24)}...</span></div>
+      <div class="detail-row"><span class="detail-key">Model</span><span>${esc((d.manufacturer||'')+' '+(d.model||''))}</span></div>
+    </div>
+
+    <div class="detail-section">
+      <h4>Status</h4>
+      <div class="detail-row"><span class="detail-key">Status</span><span class="badge ${d.status==='active'?'badge-green':d.status==='stolen'?'badge-red':'badge-gray'}">${d.status}</span></div>
+      <div class="detail-row"><span class="detail-key">Online</span><span>${d.is_online ? '🟢 Yes' : '⚫ No'}</span></div>
+      <div class="detail-row"><span class="detail-key">Rooted</span><span>${d.is_rooted ? '⚠️ Yes' : '✅ No'}</span></div>
+      <div class="detail-row"><span class="detail-key">Battery</span><span>${d.battery_level != null ? d.battery_level + '%' : '—'}</span></div>
+      <div class="detail-row"><span class="detail-key">Last Seen</span><span style="font-size:12px">${d.last_seen ? new Date(d.last_seen).toLocaleString() : 'Never'}</span></div>
+    </div>
+
+    <div class="detail-section">
+      <h4>Remote Commands</h4>
+      <div class="cmd-grid">
+        <button class="btn btn-ghost" onclick="sendCmd('${d.id}','LOCK')">🔒 Lock</button>
+        <button class="btn btn-ghost" onclick="sendCmd('${d.id}','ALARM')">🔊 Alarm</button>
+        <button class="btn btn-ghost" onclick="sendCmd('${d.id}','LOCATION')">📍 Location</button>
+        <button class="btn btn-ghost" onclick="sendCmd('${d.id}','PHOTO')">📸 Photo</button>
+        <button class="btn btn-ghost" onclick="sendCmd('${d.id}','SIMDUMP')">📡 SIM Dump</button>
+        <button class="btn btn-ghost" onclick="sendCmd('${d.id}','DEVICEINFO')">🔍 Device Info</button>
+        <button class="btn btn-orange" onclick="markStolen('${d.id}')">🚨 Mark Stolen</button>
+        <button class="btn btn-red" onclick="brickDevice('${d.id}')">⛔ Brick Device</button>
+      </div>
+    </div>
+  `;
+}
+
+function closeDetail() {
+  document.getElementById('detail-panel').classList.remove('open');
+}
+
+async function sendCmd(deviceId, cmd) {
+  if (!confirm(`Send command "${cmd}" to device?`)) return;
+  const r = await apiFetch('/api/admin/command', {
+    method: 'POST',
+    body: JSON.stringify({ device_id: deviceId, command_type: cmd, payload: {} })
+  });
+  alert(r?.command_id ? `✅ Command sent (ID: ${r.command_id.slice(0,8)}...)` : '❌ Failed');
+}
+
+async function markStolen(deviceId) {
+  if (!confirm('Mark this device as STOLEN? This will trigger brick mode.')) return;
+  await apiFetch(`/api/admin/brick?device_id=${deviceId}`, { method: 'POST' });
+  alert('Device marked as stolen and brick mode activated.');
+  await loadDashboard();
+}
+
+async function brickDevice(deviceId) {
+  if (!confirm('⛔ BRICK this device? The device will show STOLEN screen and continuously transmit location.')) return;
+  await apiFetch(`/api/admin/brick?device_id=${deviceId}`, { method: 'POST' });
+  alert('Brick command sent.');
+}
+
+async function loadRegistry() {
+  document.getElementById('registry-content').innerHTML = 'Scanning...';
+  const data = await apiFetch('/api/admin/registry');
+  if (!data) return;
+  document.getElementById('registry-content').innerHTML = `
+    <h4 style="margin-bottom:12px">Duplicate IMEI Records (${data.duplicate_imeis?.length || 0})</h4>
+    ${(data.duplicate_imeis||[]).map(r => `<div style="padding:8px;background:#1e1e2e;border-radius:6px;margin-bottom:6px;font-size:12px">
+      IMEI <strong>${r.imei}</strong> — ${r.count} devices: ${r.device_ids.join(', ')}
+    </div>`).join('') || '<p style="color:#555">None found</p>'}
+    <h4 style="margin:16px 0 12px">Duplicate Fingerprints (${data.duplicate_fingerprints?.length || 0})</h4>
+    ${(data.duplicate_fingerprints||[]).map(r => `<div style="padding:8px;background:#1e1e2e;border-radius:6px;margin-bottom:6px;font-size:12px">
+      FP <strong>${r.fingerprint}</strong> — ${r.count} devices: ${r.device_ids.join(', ')}
+    </div>`).join('') || '<p style="color:#555">None found</p>'}
+  `;
+}
+
+// ─── Utilities ────────────────────────────────────────────────────────────────
+
+function timeAgo(ts) {
+  const diff = Date.now() - new Date(ts).getTime();
+  if (diff < 60000) return 'just now';
+  if (diff < 3600000) return Math.floor(diff/60000) + 'm ago';
+  if (diff < 86400000) return Math.floor(diff/3600000) + 'h ago';
+  return Math.floor(diff/86400000) + 'd ago';
+}
+
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ─── Start ───────────────────────────────────────────────────────────────────
+
+if (token) {
+  document.getElementById('login-overlay').style.display = 'none';
+  init();
+} else {
+  document.getElementById('login-overlay').style.display = 'flex';
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,30 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-slate-950 text-slate-100 font-sans antialiased;
+  }
+  ::-webkit-scrollbar {
+    @apply w-1.5 h-1.5;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-slate-900;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-slate-700 rounded-full;
+  }
+}
+
+/* Leaflet overrides */
+.leaflet-container {
+  @apply bg-slate-800 rounded-xl;
+  font-family: inherit !important;
+}
+.leaflet-control-attribution {
+  @apply bg-slate-900/80 text-slate-400 text-xs;
+}

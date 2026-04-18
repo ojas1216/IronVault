@@ -1,21 +1,28 @@
-MIT License
+Copyright (c) 2026 ojas1216. All Rights Reserved.
 
-Copyright (c) 2026 ojas1216
+PROPRIETARY SOFTWARE LICENSE
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+This software and all associated source code, documentation, assets, and files
+(the "Software") are the exclusive intellectual property of ojas1216.
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+PERMISSIONS:
+  - You MAY view and read this source code for personal reference or learning.
+  - You MAY fork this repository on GitHub solely for the purpose of submitting
+    a pull request to the original repository.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+RESTRICTIONS:
+  - You MAY NOT copy, reproduce, or duplicate any part of this Software.
+  - You MAY NOT modify, adapt, translate, or create derivative works.
+  - You MAY NOT distribute, publish, sublicense, or sell copies of this Software.
+  - You MAY NOT use this Software or any part of it in your own projects,
+    products, or services — commercial or non-commercial — without explicit
+    written permission from the author.
+  - You MAY NOT remove or alter this license notice from any copy of the Software.
+
+NO WARRANTY:
+  THIS SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+  IMPLIED. THE AUTHOR SHALL NOT BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER
+  LIABILITY ARISING FROM THE USE OR INABILITY TO USE THIS SOFTWARE.
+
+For permissions beyond the scope of this license, contact:
+  GitHub: https://github.com/ojas1216

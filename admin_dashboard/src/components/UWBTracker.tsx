@@ -23,9 +23,13 @@ export const UWBTracker: React.FC<Props> = ({ deviceId }) => {
     refetchInterval: 1000, // 1Hz update
   });
 
-  const ranging: RangingData = data?.data || {
-    distance_meters: null, azimuth_degrees: null,
-    elevation_degrees: null, mode: 'no_data', recorded_at: null,
+  const raw = data?.data ?? {};
+  const ranging: RangingData = {
+    distance_meters: raw.distance_meters ?? null,
+    azimuth_degrees: raw.azimuth_degrees ?? null,
+    elevation_degrees: raw.elevation_degrees ?? null,
+    mode: raw.mode ?? 'no_data',
+    recorded_at: raw.recorded_at ?? null,
   };
 
   useEffect(() => {
@@ -140,7 +144,7 @@ function drawRadar(canvas: HTMLCanvasElement | null, ranging: RangingData) {
   ctx.arc(cx, cy, 5, 0, Math.PI * 2);
   ctx.fill();
 
-  if (ranging.distance_meters === null) {
+  if (ranging.distance_meters == null) {
     ctx.fillStyle = 'rgba(156,163,175,0.8)';
     ctx.font = '11px sans-serif';
     ctx.textAlign = 'center';
@@ -186,9 +190,9 @@ function drawRadar(canvas: HTMLCanvasElement | null, ranging: RangingData) {
 }
 
 function getDirectionHint(ranging: RangingData): string {
-  if (ranging.distance_meters === null) return 'Waiting for signal...';
+  if (ranging.distance_meters == null) return 'Waiting for signal...';
   if (ranging.distance_meters < 0.3) return '📍 Right here!';
-  if (ranging.azimuth_degrees === null) return `${ranging.distance_meters.toFixed(1)} m away`;
+  if (ranging.azimuth_degrees == null) return `${ranging.distance_meters.toFixed(1)} m away`;
 
   const a = ranging.azimuth_degrees;
   const dist = ranging.distance_meters < 1

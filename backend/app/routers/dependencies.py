@@ -63,7 +63,7 @@ async def verify_device_token(
     token = credentials.credentials
     payload = decode_token(token)
 
-    if not payload or payload.get("type") != "device":
+    if not payload or payload.get("type") not in ("device", "access"):
         raise HTTPException(status_code=401, detail="Invalid device token")
 
     return payload

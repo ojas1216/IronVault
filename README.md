@@ -1,240 +1,325 @@
-# Enterprise Device Security Management System
+# IronVault MDM — Enterprise Device Management & Hardware Anti-Theft System
 
-> Production-ready, OS-compliant MDM platform for managing company-owned devices.
-> Prevents unauthorized uninstall, enables real-time remote monitoring, and provides secure admin control across Android, iOS, Windows, and macOS.
-
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Platform](https://img.shields.io/badge/platform-Android%20%7C%20iOS%20%7C%20Windows%20%7C%20macOS-lightgrey)]()
-[![Backend](https://img.shields.io/badge/backend-FastAPI%20%2B%20PostgreSQL-green)]()
-[![Dashboard](https://img.shields.io/badge/dashboard-React%20%2B%20TypeScript-blue)]()
+A complete Mobile Device Management (MDM) platform for Android with deep hardware-level tracking, anti-resale protection, and remote device control. Built for enterprises that need to secure, monitor, and recover company-issued devices — even if a device is wiped, re-flashed, or its components are swapped.
 
 ---
 
-## Quick Start
+## What This System Can Do
 
-```bash
-# 1. Clone and setup
-git clone https://github.com/ojas1216/employee-device-security.git
-cd employee-device-security
-make env          # creates .env from .env.example — fill in secrets
+### Remote Device Control
+- **Remote Lock** — instantly lock the device screen from the dashboard
+- **Remote Alarm** — trigger a loud siren (cannot be silenced without admin approval)
+- **Remote Wipe** — factory reset the device remotely (OTP-protected)
+- **Lost Mode** — display a full-screen message with contact info on the device
+- **Remote Uninstall** — remove the agent remotely (OTP-protected)
+- **Front Camera Capture** — silently take a photo via the front camera
+- **GPS Location** — get the device's current location on demand
+- **SIM Info Extraction** — read IMEI, ICCID, carrier, and SIM slot details remotely
 
-# 2. Start everything
-make deploy       # docker-compose up -d (production)
-# OR
-make dev          # hot-reload development mode
+### Hardware Anti-Resale & Theft Detection
+- **Hardware Fingerprinting** — at enrollment, the system records a cryptographic hash of every hardware component: board, SoC (Snapdragon/MediaTek chip), WiFi chip MAC address, Bluetooth MAC address, device serial number, bootloader, and firmware. This becomes the "golden record."
+- **Continuous Verification** — every 30 seconds, the device re-computes and sends its hardware fingerprint. If anything has changed, an alert fires immediately.
+- **Chipset Swap Detection** — if the Snapdragon or any SoC is replaced, the SoC model and board ID in the fingerprint will change. The system flags this as `HARDWARE_TAMPERED`.
+- **Motherboard Replacement Detection** — if the motherboard is physically replaced (baseboard serial or BIOS UUID changes), the system flags the device as `RESOLD`.
+- **Factory Reset Does Not Help** — the hardware fingerprint is stored on the server, not on the device. Wiping the device does not erase the fingerprint. When the thief tries to re-enroll, the system recognises the hardware and blocks enrollment with `RESALE_DETECTED`.
+- **Global Registry** — all hardware fingerprints are stored in a cross-company registry. If a stolen device is handed to another company that also uses this system, it will be flagged on their enrollment attempt too.
+- **Mark as Stolen** — admins can manually mark a hardware fingerprint as stolen. Any future enrollment attempt with that hardware is permanently blocked.
 
-# 3. Access
-# Admin dashboard: http://localhost:3000
-# API docs:        http://localhost:8000/docs  (debug mode only)
-```
+### SIM Card Monitoring
+- **SIM Swap Detection** — any SIM card insertion, removal, or swap triggers an automatic security response: GPS location is recorded, a front-camera photo is taken, and an incident is logged.
+- **IMEI Tracking** — dual-SIM IMEI is tracked. If the baseband (modem chip) is replaced, the IMEI changes and a tamper alert fires.
+- **ICCID and IMSI Logging** — carrier and subscriber identity tracked per event.
 
----
+### Tamper Resistance
+- **Uninstall Protection** — the agent cannot be uninstalled by the user. Attempting to uninstall requires admin OTP authorization.
+- **Factory Reset Protection (FRP)** — after enrollment, the device requires company Google account authentication after any factory reset. Without that account, the device cannot be set up.
+- **Force-Stop Prevention** — a watchdog service re-launches the agent if it is killed.
+- **Airplane Mode Blocking** — agent re-enables network immediately if airplane mode is activated.
+- **Debugger and Root Detection** — detects Frida, Xposed, and root access; reports to backend.
+- **APK Signature Verification** — verifies the agent has not been repackaged or tampered with.
+- **Boot Persistence** — agent restarts automatically on every device boot.
+- **Foreground Service** — keeps agent alive even under aggressive battery optimization.
 
-## Architecture
+### Firmware Integrity Monitoring
+- **Bootloader Status** — detects unlocked bootloaders (indicator of a rooting attempt).
+- **Verified Boot State** — monitors Android Verified Boot (green/orange/red status).
+- **Firmware Fingerprint** — SHA-256 of the build fingerprint, bootloader version, and security patch level. Any firmware flash or OS modification changes this hash and triggers an alert.
+- **Security Patch Tracking** — last known security patch date is tracked per device.
 
-```
-  Employee Devices (Android / iOS / Windows / macOS)
-         │  HTTPS + JWT + Certificate Pinning
-         ▼
-  FastAPI Backend ──── PostgreSQL (devices, logs, OTP, locations)
-         │         ──── Redis     (rate limiting, OTP TTL)
-         │         ──── FCM/APNs  (push commands to devices)
-         ▼
-  React Admin Dashboard
-```
+### Location & Tracking
+- **Real-Time GPS** — continuous location tracking with configurable intervals.
+- **Shutdown Snapshot** — when the device is powered off, the last known GPS location is recorded and synced to the backend before shutdown.
+- **Location History** — full history of location updates stored and viewable in the dashboard.
+- **UWB Proximity Tracking** — Ultra-Wideband proximity detection for high-precision indoor tracking (on supported hardware).
 
-For detailed architecture diagrams see [ARCHITECTURE.md](ARCHITECTURE.md).
-
----
-
-## Project Structure
-
-```
-Antitheft/
-├── backend/                  ← FastAPI Python backend
-│   ├── app/
-│   │   ├── main.py           ← App entry, middleware, lifespan
-│   │   ├── config.py         ← Pydantic settings (env-driven)
-│   │   ├── database.py       ← Async SQLAlchemy + PostgreSQL
-│   │   ├── models/           ← ORM models (Device, User, OTP, Audit…)
-│   │   ├── routers/          ← auth, devices, commands, sim_events, uwb
-│   │   ├── services/         ← JWT, OTP (argon2), FCM/APNs push, audit
-│   │   ├── schemas/          ← Pydantic request/response schemas
-│   │   └── utils/            ← RBAC, rate limiter, security helpers
-│   ├── alembic/              ← Database migrations
-│   ├── Dockerfile
-│   └── docker-compose.yml
-│
-├── mobile/flutter_agent/     ← Flutter agent (Android + iOS)
-│   ├── lib/
-│   │   ├── main.dart
-│   │   ├── config/           ← API URL, certificate pinning
-│   │   ├── services/         ← Enrollment, heartbeat, FCM, SIM, UWB, location
-│   │   └── screens/          ← Enrollment, Status, OTP dialog
-│   ├── android/              ← Kotlin: DeviceAdmin, FRP, SilentUninstall, UWB
-│   └── ios/                  ← Swift: AppDelegate, APNs, MDM channel
-│
-├── desktop_agent/            ← Python agent (Windows/macOS system service)
-│   ├── agent.py              ← Entry point (install/uninstall/run)
-│   ├── services/             ← Heartbeat, commands, app monitor
-│   ├── utils/                ← Secure storage, device fingerprint
-│   ├── install_windows.py    ← Windows Service (SYSTEM privileges)
-│   └── install_macos.sh      ← macOS LaunchDaemon (root)
-│
-├── admin_dashboard/          ← React TypeScript admin UI
-│   └── src/
-│       ├── api/              ← auth.ts, devices.ts, audit.ts, client.ts
-│       ├── pages/            ← Dashboard, DeviceDetail, AuditLogs, Login, SimAlerts
-│       ├── components/       ← DeviceCard, LocationMap, UWBTracker, OTPModal…
-│       └── store/            ← Zustand auth state
-│
-├── ironvault/                ← IronVault anti-theft / anti-resale module
-│   ├── android/              ← Kotlin: BrickMode, HardwareTracker, SecureBoot
-│   ├── backend/              ← Standalone FastAPI + admin panel
-│   └── manufacturer_tools/   ← inject_hardware_ids.py, unlock_token_generator.py
-│
-└── docs/
-    ├── API.md                ← Full API reference with curl examples
-    ├── DEPLOYMENT.md         ← Production deploy guide
-    ├── SECURITY.md           ← JWT, OTP, RBAC, audit trail
-    ├── TESTING.md            ← pytest, Jest, OWASP
-    ├── DEVELOPER_GUIDE.md    ← Module map, flow diagrams
-    └── VIDEO_RECORDING_GUIDE.md ← Demo video scripts
-```
+### Admin Dashboard
+- Web-based dashboard accessible at `http://localhost:3000` (or your domain)
+- Device list with online/offline status, last seen, location, and flag status
+- Device detail page: location map, hardware identity, command panel, audit log
+- Hardware registry: view stolen/resold devices, lookup fingerprints, mark stolen
+- Role-based access: Admin, Operator, Viewer
+- OTP-protected destructive commands (wipe, uninstall)
 
 ---
 
-## Feature Matrix
+## Technology Stack
 
-| Feature | Android | iOS | Windows | macOS |
-|---|---|---|---|---|
-| Uninstall protection | `DevicePolicyManager` | MDM Profile | Windows Service ACL | LaunchDaemon |
-| Remote lock | `DPM.lockNow()` | MDM Lock | `LockWorkStation()` | `CGSession` |
-| Remote wipe | `DPM.wipeData()` | MDM Erase | `systemreset` | `eraseinstall` |
-| Remote uninstall | DPM + OTP flow | MDM Remove | Service removal | `launchctl` |
-| Silent admin uninstall | Server-side OTP auto-verify | — | — | — |
-| Factory Reset Protection | `DISALLOW_FACTORY_RESET` | DEP enrollment | — | — |
-| Location tracking | Fused GPS (offline cache) | Geolocator | IP geolocation | IP geolocation |
-| App usage monitoring | `UsageStatsManager` | Screen Time (limited) | Win32 API | `osascript` |
-| SIM swap detection | `SubscriptionManager` BroadcastReceiver | — | — | — |
-| Security photo on SIM swap | CameraX front camera | — | — | — |
-| UWB precision tracking | `UwbManager` (Android 12+) | `NearbyInteraction` (iPhone 11+) | — | — |
-| BLE fallback tracking | RSSI path-loss model | RSSI | — | — |
-| Hardware fingerprinting | IMEI + eMMC CID + SHA-256 | UUID + model | BIOS UUID + disk serial | Serial + disk |
-| Brick mode | Full-screen overlay + USB disable | — | — | — |
-| Auto-start on boot | `BOOT_COMPLETED` | Background Modes | Service | LaunchDaemon |
-| Push commands | FCM | APNs | FCM | FCM |
-| Tamper detection | Airplane mode block, force-stop | — | Registry protection | SIP protection |
-| Code obfuscation | ProGuard/R8, Frida detect | — | — | — |
-
----
-
-## Security Design
-
-| Mechanism | Implementation |
+| Layer | Technology |
 |---|---|
-| Authentication | JWT (15-min access + 7-day refresh), bcrypt passwords |
-| Destructive command auth | 6-digit OTP, argon2id hash, 5-min TTL, 3-attempt lockout |
-| Transport | HTTPS + TLS 1.3 + certificate pinning on agents |
-| Authorization | RBAC: Super Admin → Admin → Manager → Viewer |
-| Rate limiting | SlowAPI per-endpoint (5/min auth, 100/min default) |
-| Audit trail | Every admin action logged with ID, IP, timestamp, device |
-| OTP storage | Never plaintext — argon2id in Redis with TTL |
-| APK integrity | SHA-256 cert hash verification at runtime |
-| Anti-debug | Frida/Xposed detection, debugger check, emulator block |
+| **Mobile Agent** | Flutter 3.x (Dart), Android Kotlin plugins |
+| **Hardware Fingerprinting** | Native Kotlin: Android Build API, TelephonyManager, BluetoothManager, sysfs, SHA-256 |
+| **Secure Key Storage** | Android Keystore (TEE-backed ECDSA keys) |
+| **Firmware Verification** | Android Verified Boot API, Build.FINGERPRINT, bootloader properties |
+| **Backend API** | Python 3.12 + FastAPI + SQLAlchemy (async) |
+| **Database** | PostgreSQL 16 |
+| **Cache / Queue** | Redis 7 |
+| **Push Notifications** | Firebase Cloud Messaging (FCM) |
+| **Authentication** | JWT (device tokens: 365-day, admin tokens: short-lived) |
+| **Admin Dashboard** | React + TypeScript + Vite |
+| **Deployment** | Docker Compose + Nginx (TLS) |
+| **Encryption** | AES-256-CBC + PBKDF2 for local data, TLS 1.3 for transport |
+
+### How Hardware Fingerprinting Works
+
+The composite hardware fingerprint is a SHA-256 hash of these hardware identifiers:
+
+```
+SHA-256(
+  board_name | brand | device_codename | hardware_platform |
+  manufacturer | model | product | soc_manufacturer | soc_model |
+  wifi_mac_address | bluetooth_mac_address | device_serial
+)
+```
+
+This fingerprint is recorded at enrollment and becomes the **golden record** on the server. On every heartbeat (every 30 seconds), the device recomputes this hash and sends it. A mismatch means hardware was changed.
+
+**Component → What Changing It Does:**
+
+| Changed Component | Detected As |
+|---|---|
+| Snapdragon / SoC replaced | `HARDWARE_TAMPERED` |
+| WiFi chip replaced | `HARDWARE_TAMPERED` |
+| Bluetooth chip replaced | `HARDWARE_TAMPERED` |
+| Device serial changed | `HARDWARE_TAMPERED` |
+| Motherboard replaced | `RESOLD` |
+| BIOS / bootloader changed | `FIRMWARE_CHANGED` |
+| Firmware flashed | `FIRMWARE_CHANGED` |
+| Device re-enrolled on new account | `RESALE_DETECTED` → enrollment blocked |
 
 ---
 
-## Setup
+## Deployment
 
 ### Prerequisites
-- Docker 24+, Docker Compose V2
-- Android Studio (for mobile build)
-- Flutter 3.19+ (for mobile build)
-- Python 3.11+ (for desktop agent)
+- A Linux server (Ubuntu 22.04 LTS recommended) — any cloud provider
+- A domain name with two subdomains:
+  - `admin.yourdomain.com` → Admin dashboard
+  - `api.yourdomain.com` → Backend API
+- Ports 80 and 443 open on your server firewall
+- Minimum: 2 vCPU · 4 GB RAM · 20 GB disk (supports up to 500 devices)
 
-### Environment Variables
+### Step 1 — Install Docker
 
 ```bash
-cp .env.example .env
-# Edit .env — fill in:
-#   JWT_SECRET_KEY (generate: python -c "import secrets; print(secrets.token_hex(64))")
-#   POSTGRES_PASSWORD
-#   REDIS_PASSWORD
-#   FIREBASE_CREDENTIALS_PATH (path to your firebase_credentials.json)
+ssh user@your-server-ip
+curl -fsSL https://get.docker.com | sh
+apt install docker-compose-plugin -y
 ```
 
-### Device Owner Enrollment (Android — required for full protection)
+### Step 2 — Upload Project
 
 ```bash
-# Factory-reset device first (no Google accounts), then:
-adb shell dpm set-device-owner com.company.mdmagent/.MDMDeviceAdminReceiver
+scp -r ironvault-mdm/ user@your-server-ip:/opt/ironvault-mdm
+ssh user@your-server-ip
+cd /opt/ironvault-mdm
 ```
 
-### Build Mobile APK
+### Step 3 — Create Environment File
 
 ```bash
-cd mobile/flutter_agent
+cp .env.production.example .env
+nano .env
+```
 
-# Copy Firebase config
-cp /path/to/google-services.json android/app/google-services.json
+Fill in these values:
 
-# Build release APK
-flutter build apk --release
+| Variable | How to generate |
+|---|---|
+| `SECRET_KEY` | `openssl rand -hex 32` |
+| `DEVICE_DATA_ENCRYPTION_KEY` | `openssl rand -base64 32` |
+| `POSTGRES_PASSWORD` | Any strong password |
+| `REDIS_PASSWORD` | Any strong password |
+| `ENROLLMENT_CODE` | A secret code given to employees at device setup (e.g. `ACME_SECURE_2024`) |
+| `ALLOWED_ORIGINS` | `["https://admin.yourdomain.com"]` |
+| `ALLOWED_HOSTS` | `["api.yourdomain.com"]` |
+| `VITE_API_URL` | `https://api.yourdomain.com/api/v1` |
 
-# Output: build/app/outputs/flutter-apk/app-release.apk
+### Step 4 — Set Your Domain in Nginx
+
+```bash
+sed -i 's/yourdomain.com/youractualdomain.com/g' nginx/nginx.conf
+```
+
+### Step 5 — Get TLS Certificate
+
+```bash
+apt install certbot -y
+certbot certonly --standalone \
+  -d api.youractualdomain.com \
+  -d admin.youractualdomain.com
+cp /etc/letsencrypt/live/youractualdomain.com/fullchain.pem nginx/certs/
+cp /etc/letsencrypt/live/youractualdomain.com/privkey.pem   nginx/certs/
+```
+
+### Step 6 — Start the Application
+
+```bash
+docker compose up -d --build
+```
+
+Wait 60 seconds, then verify:
+
+```bash
+docker compose ps           # All services should show healthy/running
+curl https://api.youractualdomain.com/health   # Should return {"status":"healthy"}
+```
+
+### Step 7 — Set Up the Database
+
+```bash
+docker compose exec backend alembic upgrade head
+docker compose exec backend python scripts/seed.py
+```
+
+### Step 8 — First Login
+
+Open `https://admin.youractualdomain.com`
+
+**Default credentials:**
+- Email: `admin@ironvault.com`
+- Password: `Admin1234!`
+
+> Change these immediately after first login.
+
+---
+
+## Enrolling a Device
+
+1. Install the agent APK on the Android device
+2. In the admin dashboard: click **Add Device**, fill in employee details
+3. Give the employee the **Enrollment Code** (the `ENROLLMENT_CODE` from your `.env`)
+4. Employee opens the app, enters the server URL and enrollment code
+5. Device activates Device Administrator, collects hardware fingerprint, and appears in the dashboard
+
+At enrollment the system:
+- Records IMEI, serial number, Android ID, hardware fingerprint, firmware fingerprint
+- Stores the golden hardware record in the global registry
+- Issues the device a 365-day JWT token for authenticated communication
+
+---
+
+## Using the Dashboard
+
+### Send Commands
+
+Open any device → Command Panel:
+
+| Command | OTP Required | Effect |
+|---|---|---|
+| Lock Device | No | Locks screen immediately |
+| Trigger Alarm | No | Plays loud siren |
+| Request Location | No | Fetches current GPS |
+| Capture Front Camera | No | Silent front-camera photo |
+| Extract SIM Info | No | Returns IMEI, ICCID, carrier |
+| Get Device ID | No | Returns hardware identity |
+| Lost Mode | No | Shows full-screen lost notice |
+| Remote Uninstall | **Yes** | Removes agent remotely |
+| Wipe Device | **Yes** | Factory resets device |
+
+### Hardware Registry
+
+**Dashboard → Hardware Registry:**
+- View all devices flagged for hardware mismatch or resale
+- Look up any hardware fingerprint to check stolen/resale status
+- Mark a hardware fingerprint as stolen to block all future enrollments
+
+---
+
+## Certificate Auto-Renewal
+
+```bash
+# Add to crontab (crontab -e)
+0 3 * * * certbot renew --quiet && \
+  cp /etc/letsencrypt/live/youractualdomain.com/fullchain.pem /opt/ironvault-mdm/nginx/certs/ && \
+  cp /etc/letsencrypt/live/youractualdomain.com/privkey.pem /opt/ironvault-mdm/nginx/certs/ && \
+  cd /opt/ironvault-mdm && docker compose restart nginx
 ```
 
 ---
 
-## API Overview
+## Database Backup
 
-| Endpoint | Method | Auth | Description |
-|---|---|---|---|
-| `/api/v1/auth/login` | POST | None | Admin login |
-| `/api/v1/auth/refresh` | POST | Refresh token | Rotate access token |
-| `/api/v1/devices/` | GET | JWT | List all devices |
-| `/api/v1/devices/{id}` | GET | JWT | Device detail |
-| `/api/v1/devices/{id}/location-history` | GET | JWT | GPS trail |
-| `/api/v1/commands/issue` | POST | JWT | Send command to device |
-| `/api/v1/commands/generate-otp` | POST | JWT | Generate OTP for destructive command |
-| `/api/v1/commands/verify-otp` | POST | Device token | Device verifies OTP entered by employee |
-| `/api/v1/commands/admin-silent-uninstall` | POST | JWT | 1-click silent uninstall (no employee interaction) |
-| `/api/v1/sim-events/` | GET | JWT | List SIM swap alerts |
-| `/api/v1/uwb/{id}/live` | GET | JWT | Live UWB ranging data |
-| `/api/v1/commands/audit-logs` | GET | JWT | Full audit trail |
-| `/health` | GET | None | Health check |
+```bash
+# Backup
+docker compose exec postgres pg_dump -U mdm_user mdm_db > backup_$(date +%Y%m%d).sql
 
-Full reference: [docs/API.md](docs/API.md)
+# Restore
+docker compose exec -T postgres psql -U mdm_user mdm_db < backup_20240101.sql
+```
 
 ---
 
-## Compliance
+## Maintenance
 
-- **GDPR-compatible** — data minimization, retention policies, erasure on request
-- **Employee consent** — enrollment screen shows disclosure and requires acceptance
-- **Company devices only** — does not support BYOD/personal device monitoring
-- **Transparent service** — OS-standard foreground service notification (not hidden)
-- **Audit trail** — all monitoring activity logged and queryable
+```bash
+# View logs
+docker compose logs -f backend
+docker compose logs -f nginx
+
+# Restart a service
+docker compose restart backend
+
+# Stop everything
+docker compose down
+
+# Start again
+docker compose up -d
+```
 
 ---
 
-## Documentation
+## Common Issues
 
-| Doc | Contents |
-|-----|---------|
-| [ARCHITECTURE.md](ARCHITECTURE.md) | System design, data flows, security architecture |
-| [docs/API.md](docs/API.md) | Full API reference with curl examples |
-| [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) | Production deploy, SSL, zero-touch enrollment |
-| [docs/SECURITY.md](docs/SECURITY.md) | OTP flow, JWT design, RBAC, certificate pinning |
-| [docs/TESTING.md](docs/TESTING.md) | pytest, Jest, OWASP test strategy |
-| [docs/DEVELOPER_GUIDE.md](docs/DEVELOPER_GUIDE.md) | Module map, adding new commands |
-| [docs/VIDEO_RECORDING_GUIDE.md](docs/VIDEO_RECORDING_GUIDE.md) | Demo video scripts with timestamps |
-| [ironvault/IronVault_Setup_Guide.md](ironvault/IronVault_Setup_Guide.md) | IronVault anti-theft module setup |
-| [CONTRIBUTING.md](CONTRIBUTING.md) | Development setup, coding standards, PR process |
+**Dashboard not loading?**
+```bash
+docker compose logs nginx
+docker compose logs dashboard
+```
+
+**API returning errors?**
+```bash
+docker compose logs backend
+```
+
+**Device not appearing after enrollment?**
+- Confirm the employee entered the correct Enrollment Code
+- Confirm the device can reach your server (same network, or server is publicly accessible)
+- Check `docker compose logs backend` for enrollment errors
+
+**Certificate error in browser?**
+- Confirm DNS for both subdomains resolves to your server IP
+- Re-run Step 5 to regenerate certificates
 
 ---
 
 ## License
 
-[MIT](LICENSE) © 2026 ojas1216
+See [LICENSE](LICENSE) for full terms.
+
+This software is licensed for **authorized enterprise MDM use only**. The author expressly disclaims all liability for any misuse. Deploying organizations bear full legal responsibility for compliance with applicable privacy and employment laws. See LICENSE Section 3 for full misuse disclaimer.
+
+---
+
+## Legal Notice
+
+Hardware fingerprinting, IMEI logging, location tracking, and remote device control features are intended exclusively for company-owned devices enrolled with employee knowledge and consent. Any deployment must comply with applicable local laws governing employee monitoring and device management. See LICENSE for full terms.

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 
 interface Props {
   otp: string;
@@ -31,9 +32,10 @@ export const OTPModal: React.FC<Props> = ({
     setTimeout(() => setCopied(false), 2000);
   };
 
-  return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full mx-4">
+  const modal = (
+    <div className="fixed inset-0 bg-black/50 z-[9999] overflow-y-auto">
+      <div className="flex min-h-full items-center justify-center p-4">
+      <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full">
         <div className="flex items-center gap-3 mb-4">
           <div className="bg-red-100 p-2 rounded-full">
             <svg className="w-6 h-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -92,6 +94,9 @@ export const OTPModal: React.FC<Props> = ({
           </button>
         </div>
       </div>
+      </div>
     </div>
   );
+
+  return createPortal(modal, document.body);
 };

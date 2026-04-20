@@ -7,14 +7,14 @@ interface Props {
 }
 
 export const DeviceIdentityPanel: React.FC<Props> = ({ deviceId }) => {
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError } = useQuery({
     queryKey: ['device-identity', deviceId],
     queryFn: () => api.get(`/sim-events/device-identity/${deviceId}`),
     retry: false,
   });
 
   if (isLoading) return <div className="text-xs text-gray-400 p-4">Loading identity...</div>;
-  if (!data) return (
+  if (isError || !data) return (
     <div className="text-xs text-gray-400 p-4">
       No identity recorded yet. Agent will sync on next heartbeat.
     </div>

@@ -51,6 +51,7 @@ export const devicesApi = {
   locationHistory: (id: string, limit = 100) =>
     api.get(`/devices/${id}/location-history`, { params: { limit } }),
   appUsage: (id: string) => api.get(`/devices/${id}/app-usage`),
+  delete: (id: string) => api.delete(`/devices/${id}`),
 };
 
 export const commandsApi = {

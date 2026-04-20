@@ -17,6 +17,14 @@ class DeviceRegisterRequest(BaseModel):
     push_token: Optional[str] = None
     agent_version: Optional[str] = None
     enrollment_code: str  # Company enrollment code required
+    # Hardware identity — sent at enrollment for golden fingerprint
+    android_id: Optional[str] = None
+    hardware_fingerprint: Optional[str] = None
+    baseboard_serial: Optional[str] = None
+    bios_uuid: Optional[str] = None
+    tpm_chip_id: Optional[str] = None
+    imei1: Optional[str] = None
+    imei2: Optional[str] = None
 
 
 class DeviceHeartbeatRequest(BaseModel):
@@ -28,6 +36,11 @@ class DeviceHeartbeatRequest(BaseModel):
     agent_version: Optional[str] = None
     battery_level: Optional[int] = None
     is_screen_on: Optional[bool] = None
+    # Hardware identity — sent periodically for resale detection
+    hardware_fingerprint: Optional[str] = None
+    baseboard_serial: Optional[str] = None
+    bios_uuid: Optional[str] = None
+    firmware_fingerprint: Optional[str] = None
 
 
 class LocationUpdateRequest(BaseModel):

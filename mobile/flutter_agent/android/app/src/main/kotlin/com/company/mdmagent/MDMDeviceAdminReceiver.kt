@@ -32,8 +32,4 @@ class MDMDeviceAdminReceiver : DeviceAdminReceiver() {
         Log.w("MDMAdmin", "Device admin disabled — this should require OTP authorization")
     }
 
-    override fun onPasswordExpired(context: Context, intent: Intent) {
-        // Notify backend about password expiry
-        Log.w("MDMAdmin", "Device password expired")
-    }
 }

@@ -65,6 +65,20 @@ class Device(Base):
     ip_address = Column(String(45), nullable=True)
     network_type = Column(String(50), nullable=True)
 
+    # Anti-resale hardware tracking
+    hardware_fingerprint = Column(String(64), nullable=True, index=True)
+    baseboard_serial = Column(String(255), nullable=True)
+    bios_uuid = Column(String(64), nullable=True)
+    is_enrolled = Column(Boolean, default=False)
+    last_hardware_check = Column(DateTime(timezone=True), nullable=True)
+    last_tpm_chip_id = Column(String(64), nullable=True)
+    last_secure_boot_status = Column(Boolean, nullable=True)
+    last_firmware_fingerprint = Column(String(64), nullable=True)
+    is_flagged = Column(Boolean, default=False)
+    flag_reason = Column(String(255), nullable=True)
+    flagged_at = Column(DateTime(timezone=True), nullable=True)
+    security_flags = Column(Text, nullable=True)
+
     # Policy
     is_uninstall_blocked = Column(Boolean, default=True)
     policy_version = Column(Integer, default=1)

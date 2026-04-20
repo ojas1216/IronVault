@@ -1,5 +1,15 @@
-import React, { useState } from 'react';
-import { useParams } from 'react-router-dom';
+import React, { useState, Component, ReactNode, useCallback } from 'react';
+
+class ErrorBoundary extends Component<{ children: ReactNode; label: string }, { error: boolean }> {
+  state = { error: false };
+  static getDerivedStateFromError() { return { error: true }; }
+  render() {
+    if (this.state.error)
+      return <div className="p-4 bg-red-50 text-red-600 rounded-lg text-sm">Failed to load {this.props.label}</div>;
+    return this.props.children;
+  }
+}
+import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { devicesApi, commandsApi } from '../api/client';
@@ -11,6 +21,8 @@ import { UWBTracker } from '../components/UWBTracker';
 
 export const DeviceDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [otpModal, setOtpModal] = useState<{
     open: boolean;
     commandType: string;
@@ -53,6 +65,16 @@ export const DeviceDetailPage: React.FC = () => {
       } catch {
         toast.error('Command failed');
       }
+    }
+  };
+
+  const handleDelete = async () => {
+    try {
+      await devicesApi.delete(id!);
+      toast.success('Device removed from system');
+      navigate('/dashboard');
+    } catch {
+      toast.error('Failed to remove device');
     }
   };
 
@@ -105,6 +127,12 @@ export const DeviceDetailPage: React.FC = () => {
           <CommandButton label="Lost Mode" onClick={() => handleCommand('enable_lost_mode')} color="orange" />
           <CommandButton label="Remote Uninstall" onClick={() => handleCommand('remote_uninstall')} color="red" />
           <CommandButton label="Wipe Device" onClick={() => handleCommand('wipe_device')} color="red" />
+          <button
+            onClick={() => setShowDeleteConfirm(true)}
+            className="px-3 py-2 rounded-lg text-sm font-medium bg-gray-800 text-white hover:bg-black transition"
+          >
+            Remove Device
+          </button>
         </div>
       </div>
 
@@ -120,24 +148,64 @@ export const DeviceDetailPage: React.FC = () => {
       {/* Location Map */}
       <div className="bg-white rounded-xl shadow p-4 mb-6">
         <h3 className="font-semibold text-gray-800 mb-3">Location History</h3>
-        <LocationMap locations={locations} />
+        <ErrorBoundary label="Location Map">
+          <LocationMap locations={locations} />
+        </ErrorBoundary>
       </div>
 
       {/* App Usage Chart */}
       <div className="bg-white rounded-xl shadow p-4 mb-6">
         <h3 className="font-semibold text-gray-800 mb-3">App Usage (Last 24h)</h3>
-        <AppUsageChart data={usage} />
+        <ErrorBoundary label="App Usage Chart">
+          <AppUsageChart data={usage} />
+        </ErrorBoundary>
       </div>
 
       {/* UWB Precision Tracker */}
       {id && (
         <div className="mb-6">
-          <UWBTracker deviceId={id} />
+          <ErrorBoundary label="UWB Tracker">
+            <UWBTracker deviceId={id} />
+          </ErrorBoundary>
         </div>
       )}
 
       {/* Device Identity Panel */}
-      {id && <DeviceIdentityPanel deviceId={id} />}
+      {id && (
+        <ErrorBoundary label="Device Identity">
+          <DeviceIdentityPanel deviceId={id} />
+        </ErrorBoundary>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black/50 z-[9999] overflow-y-auto">
+          <div className="flex min-h-full items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6 text-center">
+            <div className="text-4xl mb-3">⚠️</div>
+            <h3 className="text-lg font-bold text-gray-800 mb-2">Remove Device?</h3>
+            <p className="text-sm text-gray-500 mb-6">
+              This will permanently delete <strong>{device.device_name}</strong> and all its data
+              (location history, app usage, commands) from the system. This cannot be undone.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                className="flex-1 px-4 py-2 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDelete}
+                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-semibold hover:bg-red-700"
+              >
+                Yes, Remove
+              </button>
+            </div>
+          </div>
+          </div>
+        </div>
+      )}
 
       {/* OTP Modal */}
       {otpModal.open && otpModal.otpData && (

@@ -64,34 +64,41 @@ async def send_apns_command(
     command_id: str,
     payload: Optional[dict] = None,
 ) -> dict:
-    """Send MDM command to iOS device via APNs."""
+    """Send MDM command to iOS device via APNs (HTTP/2 provider API)."""
+    import httpx
+    import time
+    import jwt as pyjwt
+
     try:
-        from apns2.client import APNsClient
-        from apns2.payload import Payload
-        from apns2.credentials import TokenCredentials
-
-        token_credentials = TokenCredentials(
-            auth_key_path=settings.APNS_KEY_PATH,
-            auth_key_id=settings.APNS_KEY_PATH.split("/")[-1].replace(".p8", ""),
-            team_id=settings.APNS_TEAM_ID,
+        apns_host = (
+            "api.sandbox.push.apple.com"
+            if getattr(settings, "APNS_USE_SANDBOX", True)
+            else "api.push.apple.com"
         )
-        client = APNsClient(
-            credentials=token_credentials,
-            use_sandbox=settings.APNS_USE_SANDBOX,
+        now = int(time.time())
+        token = pyjwt.encode(
+            {"iss": settings.APNS_TEAM_ID, "iat": now},
+            open(settings.APNS_KEY_PATH).read(),
+            algorithm="ES256",
+            headers={"kid": settings.APNS_KEY_PATH.split("/")[-1].replace(".p8", "")},
         )
+        headers = {
+            "authorization": f"bearer {token}",
+            "apns-push-type": "background",
+            "apns-priority": "5",
+            "apns-topic": f"{settings.APNS_BUNDLE_ID}.voip",
+        }
+        body = json.dumps({"mdm": command_id, "command_type": command_type, **(payload or {})})
+        url = f"https://{apns_host}/3/device/{device_token}"
 
-        # MDM push payload (empty body triggers device to check MDM server)
-        push_payload = Payload(
-            custom={
-                "mdm": command_id,
-                "command_type": command_type,
-            }
-        )
+        async with httpx.AsyncClient(http2=True) as client:
+            response = await client.post(url, content=body, headers=headers, timeout=10)
 
-        client.send_notification(device_token, push_payload, topic=settings.APNS_BUNDLE_ID)
-        return {"success": True}
+        if response.status_code == 200:
+            return {"success": True}
+        return {"success": False, "error": response.text, "status_code": response.status_code}
     except Exception as e:
-        logger.error(f"APNs send failed: {e}")
+        logger.error("APNs send failed: %s", e)
         return {"success": False, "error": str(e)}
 
 

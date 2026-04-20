@@ -1,28 +1,110 @@
-Copyright (c) 2026 ojas1216. All Rights Reserved.
-
 PROPRIETARY SOFTWARE LICENSE
+IronVault MDM — Enterprise Device Management & Anti-Theft System
+Copyright (c) 2026. All Rights Reserved.
 
-This software and all associated source code, documentation, assets, and files
-(the "Software") are the exclusive intellectual property of ojas1216.
+================================================================================
+IMPORTANT — READ BEFORE USING, DEPLOYING, OR DISTRIBUTING THIS SOFTWARE
+================================================================================
 
-PERMISSIONS:
-  - You MAY view and read this source code for personal reference or learning.
-  - You MAY fork this repository on GitHub solely for the purpose of submitting
-    a pull request to the original repository.
+1. GRANT OF LICENSE
 
-RESTRICTIONS:
-  - You MAY NOT copy, reproduce, or duplicate any part of this Software.
-  - You MAY NOT modify, adapt, translate, or create derivative works.
-  - You MAY NOT distribute, publish, sublicense, or sell copies of this Software.
-  - You MAY NOT use this Software or any part of it in your own projects,
-    products, or services — commercial or non-commercial — without explicit
-    written permission from the author.
-  - You MAY NOT remove or alter this license notice from any copy of the Software.
+   This software and all associated source code, documentation, configuration
+   files, and assets ("Software") are proprietary and confidential. A limited,
+   non-exclusive, non-transferable license is granted solely for the following
+   authorized purposes:
 
-NO WARRANTY:
-  THIS SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-  IMPLIED. THE AUTHOR SHALL NOT BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER
-  LIABILITY ARISING FROM THE USE OR INABILITY TO USE THIS SOFTWARE.
+   (a) Internal enterprise use by the purchasing organization to manage and
+       protect company-owned devices enrolled by that organization's employees;
 
-For permissions beyond the scope of this license, contact:
-  GitHub: https://github.com/ojas1216
+   (b) Evaluation and testing in isolated, controlled environments where all
+       test devices are owned by or have explicit written consent from the
+       testing organization;
+
+   (c) Security research conducted under a formal, written penetration-testing
+       or bug-bounty agreement with the software owner.
+
+2. RESTRICTIONS
+
+   You may NOT, without prior written permission from the author:
+
+   (a) Deploy, install, or activate this software on any device without the
+       explicit, informed, written consent of the device owner or the lawful
+       corporate custodian of that device;
+
+   (b) Use this software for surveillance, tracking, monitoring, or any
+       action against individuals without their knowledge and consent;
+
+   (c) Use this software to facilitate stalking, harassment, domestic abuse,
+       unauthorized data collection, or any criminal activity;
+
+   (d) Resell, sublicense, rebrand, or redistribute this software or any
+       derivative work, in whole or in part;
+
+   (e) Remove or obscure copyright notices, attribution, or this license.
+
+3. DISCLAIMER OF LIABILITY — MISUSE
+
+   THIS SOFTWARE IS DESIGNED FOR LAWFUL ENTERPRISE DEVICE MANAGEMENT
+   ("MDM") AND ANTI-THEFT PROTECTION OF COMPANY-OWNED EQUIPMENT.
+
+   THE AUTHOR EXPRESSLY DISCLAIMS ALL RESPONSIBILITY, LIABILITY, AND
+   CULPABILITY FOR ANY MISUSE OF THIS SOFTWARE, INCLUDING BUT NOT LIMITED TO:
+
+   - Unauthorized surveillance or tracking of individuals
+   - Installation on devices without the owner's consent ("stalkerware")
+   - Use in violation of applicable privacy laws (GDPR, CCPA, IT Act 2000, etc.)
+   - Any civil or criminal liability arising from illegal deployment
+   - Data breaches caused by misconfiguration or unauthorized access
+
+   THE USER AND DEPLOYING ORGANIZATION ASSUME FULL LEGAL AND ETHICAL
+   RESPONSIBILITY FOR COMPLIANCE WITH ALL APPLICABLE LOCAL, NATIONAL, AND
+   INTERNATIONAL LAWS GOVERNING DEVICE MONITORING, EMPLOYEE PRIVACY, AND
+   DATA PROTECTION.
+
+   The author is not liable for any damages — direct, indirect, incidental,
+   special, or consequential — arising from the use or misuse of this software.
+
+4. HARDWARE TRACKING & ANTI-RESALE FEATURES
+
+   The hardware fingerprinting, TPM tracking, IMEI logging, and resale-
+   detection features of this software are intended exclusively for:
+
+   (a) Recovering stolen company-owned assets;
+   (b) Preventing unauthorized resale of company equipment;
+   (c) Enforcing corporate device lifecycle policies.
+
+   These features MUST NOT be used to track privately-owned devices or
+   hardware outside the enrolled device inventory of the deploying organization.
+
+5. ENROLLMENT CONSENT REQUIREMENT
+
+   Any device enrolled in this system must display a clear, prominent notice
+   to the device user prior to or at the time of enrollment, disclosing:
+
+   (a) That the device is subject to remote monitoring and management;
+   (b) What data is collected and how it is used;
+   (c) The identity of the organization managing the device.
+
+   Enrollment without such notice may violate applicable laws.
+
+6. NO WARRANTY
+
+   THIS SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+   OR IMPLIED, INCLUDING BUT NOT LIMITED TO WARRANTIES OF MERCHANTABILITY,
+   FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT. THE ENTIRE RISK
+   AS TO QUALITY AND PERFORMANCE RESTS WITH THE USER.
+
+7. GOVERNING LAW
+
+   This license is governed by the laws of India. Any disputes shall be
+   subject to the exclusive jurisdiction of courts in India.
+
+8. CONTACT
+
+   For licensing inquiries, authorized use exceptions, or to report misuse:
+   Raise an issue on the project repository or contact the author directly.
+
+================================================================================
+USE OF THIS SOFTWARE CONSTITUTES ACCEPTANCE OF ALL TERMS OF THIS LICENSE.
+UNAUTHORIZED OR UNLAWFUL USE IS STRICTLY PROHIBITED AND MAY BE PROSECUTED.
+================================================================================

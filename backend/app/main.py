@@ -55,7 +55,7 @@ app.add_middleware(
 
 app.add_middleware(
     TrustedHostMiddleware,
-    allowed_hosts=["*"],  # restrict in production
+    allowed_hosts=settings.ALLOWED_HOSTS,
 )
 
 
@@ -67,6 +67,9 @@ async def security_headers(request: Request, call_next):
     response.headers["X-XSS-Protection"] = "1; mode=block"
     response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
     response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    # Firefox Private Network Access — allow localhost cross-origin requests
+    if request.method == "OPTIONS":
+        response.headers["Access-Control-Allow-Private-Network"] = "true"
     return response
 
 

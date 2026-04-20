@@ -9,6 +9,9 @@
   body {
     @apply bg-slate-950 text-slate-100 font-sans antialiased;
   }
+  input, select, textarea {
+    @apply text-gray-900;
+  }
   ::-webkit-scrollbar {
     @apply w-1.5 h-1.5;
   }

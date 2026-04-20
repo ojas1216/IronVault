@@ -37,6 +37,7 @@ class Settings(BaseSettings):
     OTP_RATE_LIMIT_WINDOW: int = 900  # 15 minutes lockout
 
     # Enrollment
+    ENROLLMENT_CODE: str = "COMPANY_SECRET_ENROLL_2024"
     ENROLLMENT_TOKEN_EXPIRE_HOURS: int = 24
 
     # Encryption
@@ -44,6 +45,9 @@ class Settings(BaseSettings):
 
     # CORS
     ALLOWED_ORIGINS: list[str] = ["http://localhost:3000", "https://admin.company.com"]
+
+    # Trusted hosts (comma-separated, used by TrustedHostMiddleware)
+    ALLOWED_HOSTS: list[str] = ["*"]
 
     # Rate limiting
     RATE_LIMIT_PER_MINUTE: int = 60

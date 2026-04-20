@@ -1,14 +1,18 @@
-import React from 'react';
-import { useQuery } from '@tanstack/react-query';
+import React, { useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { devicesApi } from '../api/client';
 import { DeviceCard } from '../components/DeviceCard';
 import { StatsBar } from '../components/StatsBar';
+import { AddDeviceModal } from '../components/AddDeviceModal';
 
 export const DashboardPage: React.FC = () => {
+  const [showAddDevice, setShowAddDevice] = useState(false);
+  const queryClient = useQueryClient();
+
   const { data, isLoading } = useQuery({
     queryKey: ['devices'],
     queryFn: () => devicesApi.list(),
-    refetchInterval: 30_000, // auto-refresh every 30s
+    refetchInterval: 30_000,
   });
 
   const devices = data?.data || [];
@@ -18,7 +22,22 @@ export const DashboardPage: React.FC = () => {
 
   return (
     <div className="p-6">
-      <h2 className="text-2xl font-bold text-gray-800 mb-6">Device Overview</h2>
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-2xl font-bold text-gray-800">Device Overview</h2>
+        <button
+          onClick={() => setShowAddDevice(true)}
+          className="px-4 py-2 bg-blue-700 text-white rounded-lg text-sm font-medium hover:bg-blue-800 flex items-center gap-2"
+        >
+          <span className="text-lg leading-none">+</span> Add Device
+        </button>
+      </div>
+
+      {showAddDevice && (
+        <AddDeviceModal
+          onClose={() => setShowAddDevice(false)}
+          onAdded={() => queryClient.invalidateQueries({ queryKey: ['devices'] })}
+        />
+      )}
 
       <StatsBar
         stats={[

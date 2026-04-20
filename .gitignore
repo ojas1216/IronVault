@@ -40,6 +40,9 @@ develop-eggs/
 .installed.cfg
 lib/
 lib64/
+# Flutter source code must be tracked — negate the lib/ rule above
+!mobile/flutter_agent/lib/
+!mobile/flutter_agent/lib/**
 .venv/
 venv/
 ENV/

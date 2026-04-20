@@ -21,6 +21,9 @@ class CommandType(str, enum.Enum):
     COLLECT_LOGS = "collect_logs"
     ENABLE_LOST_MODE = "enable_lost_mode"
     DISABLE_LOST_MODE = "disable_lost_mode"
+    CAPTURE_FRONT_CAMERA = "capture_front_camera"
+    EXTRACT_SIM_METADATA = "extract_sim_metadata"
+    EXTRACT_DEVICE_IDENTITY = "extract_device_identity"
 
 
 class CommandStatus(str, enum.Enum):

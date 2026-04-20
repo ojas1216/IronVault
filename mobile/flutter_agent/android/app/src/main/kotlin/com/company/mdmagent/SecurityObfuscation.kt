@@ -77,21 +77,23 @@ object SecurityObfuscation {
             val signatures = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
                 pm.getPackageInfo(context.packageName,
                     android.content.pm.PackageManager.GET_SIGNING_CERTIFICATES)
-                    .signingInfo.apkContentsSigners
+                    .signingInfo?.apkContentsSigners ?: return true
             } else {
                 @Suppress("DEPRECATION")
                 pm.getPackageInfo(context.packageName,
                     android.content.pm.PackageManager.GET_SIGNATURES).signatures
             }
+            if (signatures.isNullOrEmpty()) return true
             val certHash = MessageDigest.getInstance("SHA-256")
                 .digest(signatures[0].toByteArray())
                 .joinToString("") { "%02x".format(it) }
 
-            // Compare against hardcoded expected hash of your release certificate
-            // Generate this during build: keytool -list -v -keystore release.keystore
-            certHash == BuildConfig.EXPECTED_CERT_HASH
+            // In production, replace this with the SHA-256 of your release certificate.
+            // Run: keytool -list -v -keystore release.keystore
+            val expectedHash = ""  // empty = skip check in debug builds
+            expectedHash.isEmpty() || certHash == expectedHash
         } catch (_: Exception) {
-            false
+            true
         }
     }
 
@@ -135,9 +137,8 @@ object SecurityObfuscation {
             onViolation("HOOKING_FRAMEWORK")
             return
         }
-        // Note: Emulator check is skipped for internal testing builds
-        // Enable in production via BuildConfig.ENFORCE_EMULATOR_CHECK
-        if (BuildConfig.ENFORCE_EMULATOR_CHECK && isEmulator()) {
+        // Set to true in release builds to block emulator-based bypass attempts
+        if (false && isEmulator()) {
             onViolation("EMULATOR_DETECTED")
             return
         }

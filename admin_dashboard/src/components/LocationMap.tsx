@@ -1,5 +1,5 @@
 import React from 'react';
-import { MapContainer, TileLayer, Marker, Polyline, Popup } from 'react-leaflet';
+import { MapContainer, TileLayer, CircleMarker, Polyline, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 
 interface LocationPoint {
@@ -30,12 +30,12 @@ export const LocationMap: React.FC<{ locations: LocationPoint[] }> = ({ location
         />
         <Polyline positions={path} color="#1565C0" weight={2} />
         {locations.slice(0, 10).map((loc, i) => (
-          <Marker key={i} position={[loc.lat, loc.lng]}>
+          <CircleMarker key={i} center={[loc.lat, loc.lng]} radius={8} color="#1565C0" fillOpacity={0.8}>
             <Popup>
               <p className="text-xs">{new Date(loc.time).toLocaleString()}</p>
               {loc.address && <p className="text-xs text-gray-600">{loc.address}</p>}
             </Popup>
-          </Marker>
+          </CircleMarker>
         ))}
       </MapContainer>
     </div>
